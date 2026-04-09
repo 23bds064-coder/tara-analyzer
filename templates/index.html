@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(to right,#2193b0,#6dd5ed);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.container {
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    width:650px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.2);
+}
+
+h2 {
+    text-align:center;
+    color:#0d47a1;
+}
+
+textarea {
+    width:100%;
+    padding:10px;
+    border-radius:5px;
+}
+
+button {
+    padding:10px;
+    border:none;
+    border-radius:5px;
+    margin:5px;
+    cursor:pointer;
+}
+
+.analyze {background:#1976d2;color:white;}
+.download {background:#2e7d32;color:white;}
+.logout {background:red;color:white;float:right;}
+
+.result {
+    background:#f4f4f4;
+    padding:15px;
+    margin-top:10px;
+    border-left:5px solid #1976d2;
+}
+
+.history {
+    margin-top:15px;
+    max-height:150px;
+    overflow:auto;
+    background:#fff3e0;
+    padding:10px;
+    border-radius:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<button class="logout" onclick="window.location='/logout'">Logout</button>
+
+<h2>TARA Analyzer 🚀</h2>
+
+<p><b>Enter code or query for threat analysis:</b></p>
+
+<textarea id="code" rows="6" placeholder="Paste SQL query, script, or code here..."></textarea>
+
+<br>
+
+<button class="analyze" onclick="analyze()">Analyze</button>
+<button class="download" onclick="download()">Download</button>
+<button onclick="toggleHistory()" style="background:#ff9800;color:white;">History</button>
+
+<div class="result" id="result">Result will appear here</div>
+
+<div class="history" id="history" style="display:none;"></div>
+
+</div>
+
+<script>
+
+let historyVisible = false;
+
+async function analyze(){
+    let code=document.getElementById("code").value;
+
+    document.getElementById("result").innerText="Analyzing...";
+
+    let res=await fetch("/analyze",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code:code})
+    });
+
+    let data=await res.json();
+    document.getElementById("result").innerText=data.analysis;
+}
+
+function download(){
+    let text=document.getElementById("result").innerText;
+    let blob=new Blob([text]);
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="report.txt";
+    a.click();
+}
+
+async function toggleHistory(){
+    let div=document.getElementById("history");
+
+    if(!historyVisible){
+        let res=await fetch("/history");
+        let data=await res.json();
+
+        div.innerHTML="";
+
+        if(data.length===0){
+            div.innerHTML="No history found.";
+        } else {
+            data.reverse().forEach(item=>{
+                div.innerHTML+=`
+                <div>
+                <b>Input:</b> ${item.input}<br>
+                <b>Result:</b> ${item.result}
+                <hr>
+                </div>`;
+            });
+        }
+
+        div.style.display="block";
+        historyVisible=true;
+    } else {
+        div.style.display="none";
+        historyVisible=false;
+    }
+}
+
+</script>
+
+</body>
+</html>
